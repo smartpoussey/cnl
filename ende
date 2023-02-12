@@ -1,0 +1,92 @@
+Caesar Cipher encryption and decryption
+inp=input("Enter the message to be encrypted :")
+inp = inp.upper()
+#key = int(input(key : ))
+key=3
+
+lst=list(inp)
+
+en_msg=""
+for i in lst:
+    if(ord(i)<65 or ord(i)>90): #Assuming the message is in uppercase
+        en_msg=en_msg+i
+    elif ord(i)>90-key:
+        en_msg=en_msg+chr(64+ (key-(90-ord(i))))
+    else:
+        en_msg=en_msg+chr(ord(i)+key)
+        
+print("The encrypted message is: ",en_msg)
+
+f=open("Z://Comp Networks Lab/CN PBSHEET-ENCRYPT DECRYPT", "w")
+print("file created successfully")
+f.write(en_msg)
+f.close()
+
+f=open("Z://Comp Networks Lab/CN PBSHEET-ENCRYPT DECRYPT", "r")
+en_msg=f.read()
+f.close()
+
+msg = ""
+
+for i in en_msg:
+    if(ord(i)<65 or ord(i)>90): #Assuming the message is in uppercase
+        msg=msg+i
+    elif ord(i)<65+key:
+        msg=msg+chr(91- (key-(ord(i)-65)))
+    else:
+        msg=msg+chr(ord(i)-key)
+        
+print("The decrypted message is: ",msg)
+
+
+Vigenere Cipher encryption 
+def vigenere_encrypt(inp,key):
+    strr=""
+    j=0
+    keyword=""
+    for i in inp: 
+            numValue=ord(i)+ord(key[j])-65   #-65-65+65
+            if(numValue>90):
+                rem=numValue%90
+                numValue=64+rem
+            if(j==len(key)-1):
+                strr=strr+chr(numValue)
+                keyword=keyword+key[j]
+                j=0
+                
+            else:
+                strr=strr+chr(numValue)
+                keyword=keyword+key[j]
+                j=j+1
+    f=open("vigenere_file.txt",'w')
+    f.write(strr)
+    f.write("\n")
+    f.write(keyword)
+    f.close()
+            
+                
+            
+
+inp=input("Enter plaintext:")
+key=input("Enter keyword:")
+vigenere_encrypt(inp,key)
+
+Vigenere Cipher decryption
+def vigenere_decrypt():
+    f=open("vigenere_file.txt",'r')
+    message=f.readline()
+    message=message.rstrip('\n')
+    keyword = f.readline()
+    j=0
+    final=""
+    for i in message:
+            if(ord(i)>=ord(keyword[j])):
+                final=final+chr(ord(i)-ord(keyword[j])+65)
+                j=j+1
+            elif(ord(i)<ord(keyword[j])):
+                final=final+chr(ord(i)-ord(keyword[j])+65 +26)
+                j=j+1
+        
+    print("The message is ",final)
+
+vigenere_decrypt()
