@@ -1,0 +1,44 @@
+import heapq
+
+
+def dijkstra_shortest_path(graph, start, end):
+    distances = {node: float('inf') for node in graph}
+    parents = {node: None for node in graph}
+    distances[start] = 0
+
+    heap = [(0, start)]
+
+    while heap:
+        current_distance, current_node = heapq.heappop(heap)
+
+        if current_node == end:
+            path = []
+            while current_node is not None:
+                path.append(current_node)
+                current_node = parents[current_node]
+            path.reverse()
+            return distances[end], path
+
+        for neighbor, weight in graph[current_node].items():
+            distance = current_distance + weight
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                parents[neighbor] = current_node
+                heapq.heappush(heap, (distance, neighbor))
+
+    return float('inf'), None
+
+
+graph_ = {
+    'A': {'B': 1, 'D': 4},
+    'B': {'A': 1, 'C': 3, 'D': 2},
+    'C': {'B': 3, 'D': 5},
+    'D': {'A': 4, 'B': 2, 'C': 5}
+}
+
+print("Destination | shortest distance |  Next hop")
+
+for i in graph_:
+    a = dijkstra_shortest_path(graph_, 'A', i)
+    a[1].append('None')
+    print('\t', i, '\t\t|\t\t', a[0], '\t\t\t|\t', a[1][1])
