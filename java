@@ -86,3 +86,33 @@ char lowerCaseCh = Character.toLowerCase(ch);
 
 Checking Equality:
 boolean isEqual = Character.compare(ch1, ch2) == 0;
+
+char[] charArray = str.toCharArray();
+
+
+Tokenizing Strings:
+java
+Copy code
+StringTokenizer tokenizer = new StringTokenizer(inputStr, delimiters);
+while (tokenizer.hasMoreTokens()) {
+    String token = tokenizer.nextToken();
+}
+StringJoiner Class (java.util package):
+Joining Strings:
+java
+Copy code
+StringJoiner joiner = new StringJoiner(delimiter);
+joiner.add(str1);
+joiner.add(str2);
+String joinedStr = joiner.toString();
+Unicode and Code Points:
+Getting Code Point:
+
+int codePoint = str.codePointAt(index);
+Getting Unicode Count:
+
+int unicodeCount = str.length();
+int unicodeCount = str.codePointCount(startIndex, endIndex);
+Converting Code Point to String:
+
+String strFromCodePoint = new String(new int[]{codePoint}, 0, 1);
