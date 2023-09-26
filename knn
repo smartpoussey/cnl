@@ -1,0 +1,42 @@
+import math
+import random
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("C:/Users/Anbumozhy/Downloads/data.csv")
+
+bmi = data['bmi'].tolist()
+age = data['age'].tolist()
+sugar = data['sugar'].tolist()
+
+k = 3
+new_bmi = 43.6
+new_age = 40
+
+distances = []
+for i in range(data.shape[0]):
+    distance = math.sqrt(math.pow(new_bmi - bmi[i], 2) + math.pow(new_age - age[i], 2))
+    distances.append((distance, sugar[i]))
+
+distances.sort()
+
+kNeighbours = distances[0:k]
+
+plt.scatter(bmi, age, c=sugar, cmap='coolwarm', label='Data Points', alpha=0.6)
+plt.scatter([new_bmi] * k, [new_age] * k, c='red', marker='x', label='New Data Point', a)
+plt.xlabel('BMI')
+plt.ylabel('Age')
+plt.legend()
+plt.title('Visualization of Data and K-Nearest Neighbors')
+plt.grid(True)
+
+plt.show()
+
+sugar_count = {0: 0, 1: 0}
+
+for _, sugar in kNeighbours:
+    sugar_count[sugar] += 1
+
+sugar_prediction = max(sugar_count, key=lambda x: sugar_count[x])
+
+print(sugar_prediction)
