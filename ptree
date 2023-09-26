@@ -1,0 +1,167 @@
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <unistd.h>
+
+#include <sys/types.h>
+
+#include <sys/wait.h>
+
+ 
+
+int main() {
+
+    int pipe0[2]; // Pipe for parent to child (cat log | ...)
+
+    int pipe1[2]; // Pipe for child to parent (... | grep -i 'admin' | wc -l)
+
+ 
+
+    // Create Pipe0
+
+    if (pipe(pipe0) == -1) {
+
+        perror("pipe0");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+ 
+
+    // Create Pipe1
+
+    if (pipe(pipe1) == -1) {
+
+        perror("pipe1");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+ 
+
+    pid_t child_pid = fork();
+
+ 
+
+    if (child_pid == -1) {
+
+        perror("fork");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+ 
+
+    if (child_pid == 0) {
+
+        // Child process
+
+        close(pipe0[1]); // Close write end of Pipe0
+
+        close(pipe1[0]); // Close read end of Pipe1
+
+ 
+
+        // Redirect standard input to read from Pipe0
+
+        dup2(pipe0[0], STDIN_FILENO);
+
+ 
+
+        // Redirect standard output to write to Pipe1
+
+        dup2(pipe1[1], STDOUT_FILENO);
+
+ 
+
+        // Close unused pipe ends
+
+        close(pipe0[0]);
+
+        close(pipe1[1]);
+
+ 
+
+        // Execute grep -i 'admin'
+
+        execlp("grep", "grep", "-i", "hi", (char *)NULL);
+
+        perror("execlp");
+
+        exit(EXIT_FAILURE);
+
+    } else {
+
+        // Parent process
+
+        close(pipe0[0]); // Close read end of Pipe0
+
+        close(pipe1[1]); // Close write end of Pipe1
+
+ 
+
+        // Open the file 'log' for reading
+
+        FILE *file = fopen("chumma.txt", "r");
+
+        if (!file) {
+
+            perror("fopen");
+
+            exit(EXIT_FAILURE);
+
+        }
+
+ 
+
+        char buffer[1024];
+
+        ssize_t bytesRead;
+
+ 
+
+        // Read data from 'log' and write it to Pipe0
+
+        while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+
+            write(pipe0[1], buffer, bytesRead);
+
+        }
+
+ 
+
+        close(pipe0[1]); // Close write end of Pipe0
+
+ 
+
+        // Wait for the child process to complete
+
+        wait(NULL);
+
+ 
+
+        // Read the result from Pipe1 and count the lines using wc -l
+
+        dup2(pipe1[0], STDIN_FILENO);
+
+        execlp("wc", "wc", "-l", (char *)NULL);
+
+        perror("execlp");
+
+        exit(EXIT_FAILURE);
+
+ 
+
+        fclose(file);
+
+    }
+
+ 
+
+    return 0;
+
+}
