@@ -1,0 +1,78 @@
+Program for thread creation
+thread.c
+#include<pthread.h>
+#include<stdio.h>
+void *mythreadfn(void *vargp){
+     int *threadid = (int *)vargp;
+     printf("Iam a thread with id %d\n",*threadid);
+    printf("Entering into critical section %d\n",*threadid);
+     sleep(3);
+     printf("Exiting critical section %d\n",*threadid);
+}
+int main()
+{
+     pthread_t tid1, tid2, tid3;
+     pthread_create(&tid1,NULL,mythreadfn,(void *)&tid1);
+     pthread_create(&tid2,NULL,mythreadfn,(void *)&tid2);
+     pthread_create(&tid3,NULL,mythreadfn,(void *)&tid3);
+     pthread_join(tid1,NULL);
+     pthread_join(tid2,NULL);
+     pthread_join(tid3,NULL);
+     return 0;
+}
+
+Compile
+gcc thread.c -lpthread
+
+Semaphore.c
+#include<pthread.h>
+#include<stdio.h>
+#include<semaphore.h>
+sem_t mutex;//binary semaphore
+void *mythreadfn(void *vargp){
+     int *threadid = (int *)vargp;
+     printf("Iam a thread with id %d\n",*threadid);
+     sem_wait(&mutex);
+     printf("Entering into critical section %d\n",*threadid);
+     sleep(3);
+     printf("Exiting critical section %d\n",*threadid);
+     sem_post(&mutex);
+}
+int main()
+{
+     sem_init(&mutex,0,2);
+     pthread_t tid1, tid2, tid3;
+     pthread_create(&tid1,NULL,mythreadfn,(void *)&tid1);
+     pthread_create(&tid2,NULL,mythreadfn,(void *)&tid2);
+     pthread_create(&tid3,NULL,mythreadfn,(void *)&tid3);
+     pthread_join(tid1,NULL);
+     pthread_join(tid2,NULL);
+     pthread_join(tid3,NULL);
+     return 0;
+}
+Tunnel.c
+#include<pthread.h>
+#include<stdio.h>
+#include<semaphore.h>
+sem_t mutex;//binary semaphore
+void *mythreadfn(void *vargp){
+     sem_wait(&mutex);
+     printf("Entering into tunnel %s car\n",(char *)vargp);
+     sleep(3);
+     printf("Enterig tunnel %s car\n",(char *)vargp);
+     sem_post(&mutex);
+}
+int main()
+{
+     sem_init(&mutex,0,1);
+     char *msg1="North";
+     char *msg2="South";
+     pthread_t tid1, tid2, tid3;
+     pthread_create(&tid1,NULL,mythreadfn,(void *)msg1);
+     pthread_create(&tid2,NULL,mythreadfn,(void *)msg2);
+     pthread_create(&tid3,NULL,mythreadfn,(void *)msg1);
+     pthread_join(tid1,NULL);
+     pthread_join(tid2,NULL);
+     pthread_join(tid3,NULL);
+     return 0;
+}
