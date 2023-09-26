@@ -1,0 +1,619 @@
+Process tree
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <unistd.h>
+
+#include <sys/types.h>
+
+#include <sys/wait.h>
+
+ 
+
+int main() {
+
+    int pipe0[2]; // Pipe for parent to child (cat log | ...)
+
+    int pipe1[2]; // Pipe for child to parent (... | grep -i 'admin' | wc -l)
+
+ 
+
+    // Create Pipe0
+
+    if (pipe(pipe0) == -1) {
+
+        perror("pipe0");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+ 
+
+    // Create Pipe1
+
+    if (pipe(pipe1) == -1) {
+
+        perror("pipe1");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+ 
+
+    pid_t child_pid = fork();
+
+ 
+
+    if (child_pid == -1) {
+
+        perror("fork");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+ 
+
+    if (child_pid == 0) {
+
+        // Child process
+
+        close(pipe0[1]); // Close write end of Pipe0
+
+        close(pipe1[0]); // Close read end of Pipe1
+
+ 
+
+        // Redirect standard input to read from Pipe0
+
+        dup2(pipe0[0], STDIN_FILENO);
+
+ 
+
+        // Redirect standard output to write to Pipe1
+
+        dup2(pipe1[1], STDOUT_FILENO);
+
+ 
+
+        // Close unused pipe ends
+
+        close(pipe0[0]);
+
+        close(pipe1[1]);
+
+ 
+
+        // Execute grep -i 'admin'
+
+        execlp("grep", "grep", "-i", "hi", (char *)NULL);
+
+        perror("execlp");
+
+        exit(EXIT_FAILURE);
+
+    } else {
+
+        // Parent process
+
+        close(pipe0[0]); // Close read end of Pipe0
+
+        close(pipe1[1]); // Close write end of Pipe1
+
+ 
+
+        // Open the file 'log' for reading
+
+        FILE *file = fopen("chumma.txt", "r");
+
+        if (!file) {
+
+            perror("fopen");
+
+            exit(EXIT_FAILURE);
+
+        }
+
+ 
+
+        char buffer[1024];
+
+        ssize_t bytesRead;
+
+ 
+
+        // Read data from 'log' and write it to Pipe0
+
+        while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+
+            write(pipe0[1], buffer, bytesRead);
+
+        }
+
+ 
+
+        close(pipe0[1]); // Close write end of Pipe0
+
+ 
+
+        // Wait for the child process to complete
+
+        wait(NULL);
+
+ 
+
+        // Read the result from Pipe1 and count the lines using wc -l
+
+        dup2(pipe1[0], STDIN_FILENO);
+
+        execlp("wc", "wc", "-l", (char *)NULL);
+
+        perror("execlp");
+
+        exit(EXIT_FAILURE);
+
+ 
+
+        fclose(file);
+
+    }
+
+ 
+
+    return 0;
+
+}
+
+ 
+
+Producer/consumer
+
+ 
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <pthread.h>
+
+ 
+
+#define BUFFER_SIZE 10
+
+ 
+
+int buffer[BUFFER_SIZE];
+
+int in = 0;
+
+int out = 0;
+
+int count = 0;
+
+ 
+
+pthread_mutex_t mutex;
+
+pthread_cond_t not_empty;
+
+pthread_cond_t not_full;
+
+ 
+
+void produce(int item) {
+
+    buffer[in] = item;
+
+    in = (in + 1) % BUFFER_SIZE;
+
+    count++;
+
+}
+
+ 
+
+int consume() {
+
+    int item = buffer[out];
+
+    out = (out + 1) % BUFFER_SIZE;
+
+    count--;
+
+    return item;
+
+}
+
+ 
+
+void* producer(void* arg) {
+
+    for (int i = 1; i <= 20; i++) {
+
+        pthread_mutex_lock(&mutex);
+
+ 
+
+        while (count == BUFFER_SIZE) {
+
+            pthread_cond_wait(&not_full, &mutex);
+
+        }
+
+ 
+
+        produce(i);
+
+        printf("Produced: %d\n", i);
+
+ 
+
+        pthread_cond_signal(&not_empty);
+
+        pthread_mutex_unlock(&mutex);
+
+    }
+
+ 
+
+    return NULL;
+
+}
+
+ 
+
+void* consumer(void* arg) {
+
+    for (int i = 1; i <= 20; i++) {
+
+        pthread_mutex_lock(&mutex);
+
+ 
+
+        while (count == 0) {
+
+            pthread_cond_wait(&not_empty, &mutex);
+
+        }
+
+ 
+
+        int item = consume();
+
+        printf("Consumed: %d\n", item);
+
+ 
+
+        pthread_cond_signal(&not_full);
+
+        pthread_mutex_unlock(&mutex);
+
+    }
+
+ 
+
+    return NULL;
+
+}
+
+ 
+
+int main() {
+
+    pthread_t producer_thread, consumer_thread;
+
+ 
+
+    pthread_mutex_init(&mutex, NULL);
+
+    pthread_cond_init(&not_empty, NULL);
+
+    pthread_cond_init(&not_full, NULL);
+
+ 
+
+    pthread_create(&producer_thread, NULL, producer, NULL);
+
+    pthread_create(&consumer_thread, NULL, consumer, NULL);
+
+ 
+
+    pthread_join(producer_thread, NULL);
+
+    pthread_join(consumer_thread, NULL);
+
+ 
+
+    pthread_mutex_destroy(&mutex);
+
+    pthread_cond_destroy(&not_empty);
+
+    pthread_cond_destroy(&not_full);
+
+ 
+
+    return 0;
+
+}
+
+ 
+
+Reader’s Writer’s problem
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <pthread.h>
+
+#include <unistd.h>
+
+ 
+
+#define NUM_READERS 3
+
+#define NUM_WRITERS 2
+
+ 
+
+int shared_data = 0;
+
+int readers_count = 0;
+
+pthread_mutex_t mutex;
+
+pthread_cond_t can_read, can_write;
+
+ 
+
+void* reader(void* arg) {
+
+    int reader_id = *((int*)arg);
+
+ 
+
+    while (1) {
+
+        pthread_mutex_lock(&mutex);
+
+       
+
+        while (readers_count == -1) {
+
+            pthread_cond_wait(&can_read, &mutex);
+
+        }
+
+       
+
+        readers_count++;
+
+ 
+
+        pthread_mutex_unlock(&mutex);
+
+ 
+
+        // Read the shared data
+
+        printf("Reader %d reads: %d\n", reader_id, shared_data);
+
+ 
+
+        pthread_mutex_lock(&mutex);
+
+        readers_count--;
+
+ 
+
+        if (readers_count == 0) {
+
+            pthread_cond_signal(&can_write);
+
+        }
+
+ 
+
+        pthread_mutex_unlock(&mutex);
+
+ 
+
+        // Sleep to simulate reading
+
+        sleep(1);
+
+    }
+
+ 
+
+    return NULL;
+
+}
+
+ 
+
+void* writer(void* arg) {
+
+    int writer_id = *((int*)arg);
+
+ 
+
+    while (1) {
+
+        pthread_mutex_lock(&mutex);
+
+ 
+
+        while (readers_count != 0) {
+
+            pthread_cond_wait(&can_write, &mutex);
+
+        }
+
+ 
+
+        // Write to the shared data
+
+        shared_data++;
+
+        printf("Writer %d writes: %d\n", writer_id, shared_data);
+
+ 
+
+        readers_count = -1;
+
+        pthread_cond_broadcast(&can_read);
+
+        pthread_mutex_unlock(&mutex);
+
+ 
+
+        // Sleep to simulate writing
+
+        sleep(1);
+
+    }
+
+ 
+
+    return NULL;
+
+}
+
+ 
+
+int main() {
+
+    pthread_t readers[NUM_READERS];
+
+    pthread_t writers[NUM_WRITERS];
+
+    int reader_ids[NUM_READERS];
+
+    int writer_ids[NUM_WRITERS];
+
+ 
+
+    pthread_mutex_init(&mutex, NULL);
+
+    pthread_cond_init(&can_read, NULL);
+
+    pthread_cond_init(&can_write, NULL);
+
+ 
+
+    for (int i = 0; i < NUM_READERS; i++) {
+
+        reader_ids[i] = i + 1;
+
+        pthread_create(&readers[i], NULL, reader, &reader_ids[i]);
+
+    }
+
+ 
+
+    for (int i = 0; i < NUM_WRITERS; i++) {
+
+        writer_ids[i] = i + 1;
+
+        pthread_create(&writers[i], NULL, writer, &writer_ids[i]);
+
+    }
+
+ 
+
+    // Allow threads to run for a while
+
+    sleep(10);
+
+ 
+
+    // Clean up
+
+    for (int i = 0; i < NUM_READERS; i++) {
+
+        pthread_cancel(readers[i]);
+
+    }
+
+ 
+
+    for (int i = 0; i < NUM_WRITERS; i++) {
+
+        pthread_cancel(writers[i]);
+
+    }
+
+ 
+
+    pthread_mutex_destroy(&mutex);
+
+    pthread_cond_destroy(&can_read);
+
+    pthread_cond_destroy(&can_write);
+
+ 
+
+    return 0;
+
+}
+
+CAR PROBLEM
+
+#include<pthread.h>
+
+#include<stdio.h>
+
+#include<semaphore.h>
+
+sem_t mutex;//binary semaphore
+
+void *mythreadfn(void *vargp){
+
+     sem_wait(&mutex);
+
+     printf("Entering into tunnel %s car\n",(char *)vargp);
+
+     sleep(3);
+
+     printf("Enterig tunnel %s car\n",(char *)vargp);
+
+     sem_post(&mutex);
+
+}
+
+
+
+
+int main()
+
+{
+
+     sem_init(&mutex,0,1);
+
+     char *msg1="North";
+
+     char *msg2="South";
+
+     pthread_t tid1, tid2, tid3;
+
+     pthread_create(&tid1,NULL,mythreadfn,(void *)msg1);
+
+     pthread_create(&tid2,NULL,mythreadfn,(void *)msg2);
+
+     pthread_create(&tid3,NULL,mythreadfn,(void *)msg1);
+
+     pthread_join(tid1,NULL);
+
+     pthread_join(tid2,NULL);
+
+     pthread_join(tid3,NULL);
+
+     return 0;
+
+}
+
