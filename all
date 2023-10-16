@@ -1,181 +1,140 @@
-import random
+/* process1.c */
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <stdio.h>
+#define SHMSIZE 27
+main()
+{
+char c;
+int shmid;
+key_t key;
+char *shm, *s;
+/*
+* We'll name our shared memory segment
+* "5678".
+*/
+key = 5678;
+/*
+* Create the
+segment. */
+if ((shmid = shmget(key, SHMSIZE, IPC_CREAT | 0666)) < 0)
+{ perror("shmget");
+exit(1);
+}
+/*
+* Now we attach the segment to our data space.
+*/
+if ((shm = shmat(shmid, NULL, 0)) == (char *) -1)
+{ perror("shmat");
+exit(1);
+}
+/*
+* Now put 1 in first
+place */
+s=shm;
+*s++='1';
+*s=NULL;
+printf("Process1:- I have put the message %s\n",shm);
+/*
+* Finally, we wait until the other process
 
-x=np.array([[0,0,1,1],[0,1,0,1]])
-y=np.array([[0,1,1,0]])
+* changes the first character of our memory
+*/
+while (*shm != '2' && *shm+6 != 'o')
+sleep(1);
+printf("Process1:- Process2 has put the message
+%s\n",shm); while (*shm != '3' && *shm+7 != 'y')
+sleep(1);
+printf("Process1:- Process3 has put the message %s\n",shm);
+printf("Process1:- I am quiting\n");
+exit(0);
+}
+/* process2.c */
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <stdio.h>
+#define SHMSIZE 27
+main()
+{
+char c;
+int shmid;
+key_t key;
+char *shm;
+/*
+* We'll name our shared memory segment.
+*/
+key = 5678;
+/*
+* Create the segment.
+*/
+if ((shmid = shmget(key, SHMSIZE, 0666)) < 0)
+{ perror("shmget");
+exit(1);
+}
+/*
+* Now we attach the segment to our data space.
+*/
+if ((shm = shmat(shmid, NULL, 0)) == (char *) -1)
+{ perror("shmat");
+exit(1);
+}
+/*
 
-n_x = 2
-n_y = 1
+* Now put 1 in first
+place */
+*shm++='2';
+*shm++=' ';
+*shm++='h';
+*shm++='e';
+*shm++='l';
+*shm++='l';
+*shm++='o';
+*shm = NULL;
+exit(0);
+}
+/* process3.c */
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <stdio.h>
+#define SHMSIZE 27
+main()
+{
+char c;
+int shmid;
+key_t key;
+char *shm, *s;
+/*
+* We'll name our shared memory segment.
+*/
+key = 5678;
+/*
+* Create the
+segment. */
+if ((shmid = shmget(key, SHMSIZE, 0666)) < 0)
+{ perror("shmget");
+exit(1);
+}
+/*
+* Now we attach the segment to our data space.
+*/
+if ((shm = shmat(shmid, NULL, 0)) == (char *) -1)
+{ perror("shmat");
+exit(1);
+}
+/*
+* Now put 1 in first place
 
-n_h = 2
-
-m = x.shape[1]
-
-lr = 0.1
-
-np.random.seed(2)
-w1 = np.random.rand(n_h,n_x)   # Weight matrix for hidden layer
-w2 = np.random.rand(n_y,n_h)   # Weight matrix for output layer
-
-losses = []
-
-
-# I used sigmoid activation function for hidden layer and output
-def sigmoid(z):
-    z = 1 / (1 + np.exp(-z))
-    return z
-
-
-# Forward propaga   tion
-def forward_prop(w1, w2, x):
-    z1 = np.dot(w1, x)
-    a1 = sigmoid(z1)
-    z2 = np.dot(w2, a1)
-    a2 = sigmoid(z2)
-    return z1, a1, z2, a2
-
-
-# Backward propagation
-def back_prop(m, w1, w2, z1, a1, z2, a2, y):
-    dz2 = a2 - y
-    dw2 = np.dot(dz2, a1.T) / m
-    dz1 = np.dot(w2.T, dz2) * a1 * (1 - a1)
-    dw1 = np.dot(dz1, x.T) / m
-    dw1 = np.reshape(dw1, w1.shape)
-
-    dw2 = np.reshape(dw2, w2.shape)
-    return dz2, dw2, dz1, dw1
-
-iterations = 10000
-for i in range(iterations):
-    z1,a1,z2,a2 = forward_prop(w1,w2,x)
-    loss = -(1/m)*np.sum(y*np.log(a2)+(1-y)*np.log(1-a2))
-    losses.append(loss)
-    da2,dw2,dz1,dw1 = back_prop(m,w1,w2,z1,a1,z2,a2,y)
-    w2 = w2-lr*dw2
-    w1 = w1-lr*dw1
-
-plt.plot(losses)
-plt.xlabel("EPOCHS")
-plt.ylabel("Loss value")
-
-'''
-import math
-import random
-import pandas as pd
-import matplotlib.pyplot as plt
-
-chills = 'y'
-rn = 'n'
-ha = 'mild'
-fever = 'y'
-
-data = pd.read_csv("C:/Users/Anbumozhy/Downloads/cold-data.csv")
-
-num = data.shape[0]
-
-chills_data = data['chills'].tolist()
-rn_data = data['rn'].tolist()
-ha_data = data['ha'].tolist()
-fever_data = data['fever'].tolist()
-
-cold =  data['cold'].tolist()
-
-data = []
-
-data.append(chills_data)
-data.append(rn_data)
-data.append(ha_data)
-data.append(fever_data)
-data.append(cold)
-
-yesNum = cold.count('y')
-noNum = cold.count('n')
-
-yesProb = yesNum/num
-noProb = noNum/num
-
-yesDec = [0, 0, 0, 0]
-noDec = [0, 0, 0, 0]
-
-for i in range(num):
-    outcome = data[4][i]
-
-    if outcome == 'y':
-        if data[0][i] == 'y':
-            yesDec[0] += 1
-        if data[1][i] == 'n':
-            yesDec[1] += 1
-        if data[2][i] == 'mild':
-            yesDec[2] += 1
-        if data[3][i] == 'y':
-            yesDec[3] += 1
-    else:
-        if data[0][i] == 'y':
-            noDec[0] += 1
-        if data[1][i] == 'n':
-            noDec[1] += 1
-        if data[2][i] == 'mild':
-            noDec[2] += 1
-        if data[3][i] == 'y':
-            noDec[3] += 1
-
-final_yes = yesProb
-
-for j in range(4):
-    final_yes *= (yesDec[j] / yesNum)
-
-final_no = noProb
-
-for j in range(4):
-    final_no *= (noDec[j] / noNum)
-
-print(final_yes)
-print(final_no)
-
-'''
-'''
-import math
-import random
-import pandas as pd
-import matplotlib.pyplot as plt
-
-data = pd.read_csv("C:/Users/Anbumozhy/Downloads/data.csv")
-
-bmi = data['bmi'].tolist()
-age = data['age'].tolist()
-sugar = data['sugar'].tolist()
-
-k = 3
-new_bmi = 43.6
-new_age = 40
-
-distances = []
-for i in range(data.shape[0]):
-    distance = math.sqrt(math.pow(new_bmi - bmi[i], 2) + math.pow(new_age - age[i], 2))
-    distances.append((distance, sugar[i]))
-
-distances.sort()
-
-kNeighbours = distances[0:k]
-
-plt.scatter(bmi, age, c=sugar, cmap='coolwarm', label='Data Points', alpha=0.6)
-plt.scatter([new_bmi] * k, [new_age] * k, c='red', marker='x', label='New Data Point', a)
-plt.xlabel('BMI')
-plt.ylabel('Age')
-plt.legend()
-plt.title('Visualization of Data and K-Nearest Neighbors')
-plt.grid(True)
-
-plt.show()
-
-sugar_count = {0: 0, 1: 0}
-
-for _, sugar in kNeighbours:
-    sugar_count[sugar] += 1
-
-sugar_prediction = max(sugar_count, key=lambda x: sugar_count[x])
-
-print(sugar_prediction)
-
-
-'''
+*/
+*shm++='3';
+*shm++=' ';
+*shm++='m';
+*shm++='e';
+*shm++='m';
+*shm++='o';
+*shm++='r';
+*shm++='y';
+*shm = NULL;
+exit(0);
