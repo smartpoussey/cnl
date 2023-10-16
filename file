@@ -1,0 +1,30 @@
+#include <stdio.h>
+
+int main(){
+
+    FILE *file1 = fopen("user_input.txt", "w");
+    if (file1 == NULL) {
+        printf("Error opening file for writing.\n");
+        return 1;
+    }
+
+    char input1[100]; // Assuming the input won't exceed 100 characters
+    printf("Enter some text: ");
+    fgets(input1, sizeof(input1), stdin);
+    fprintf(file1, "%s", input1);
+
+    fclose(file1);
+
+    FILE *file2 = fopen("user_input.txt", "r");
+    if (file2 == NULL) {
+        printf("Error opening file for reading.\n");
+        return 1;
+    }
+
+    char input[100];
+    fscanf(file2, "%99[^\n]", input); // Read up to 99 characters until a newline
+    fclose(file2);
+
+    printf("Data from the file: %s\n", input);
+    return 0;
+}
