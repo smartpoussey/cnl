@@ -1,0 +1,36 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+# Load the dataset from a CSV file
+dataset = pd.read_csv('your_dataset.csv')
+
+# Separate the features from the target variable if applicable
+# For PCA, we typically use only the feature columns
+X = dataset.drop('target_column', axis=1)  # Replace 'target_column' with the name of your target variable
+
+# Standardize the data (mean=0, variance=1)
+scaler = StandardScaler()
+X_std = scaler.fit_transform(X)
+
+# Initialize PCA with the number of components you want
+num_components = 2  # You can choose the number of components you desire
+pca = PCA(n_components=num_components)
+
+# Fit PCA to the standardized data
+X_pca = pca.fit_transform(X_std)
+
+# Create a DataFrame with the PCA results
+pca_df = pd.DataFrame(data=X_pca, columns=['PCA1', 'PCA2'])  # Adjust column names accordingly
+
+# Plot the PCA components
+plt.figure(figsize=(8, 6))
+plt.scatter(pca_df['PCA1'], pca_df['PCA2'])
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.title('PCA Result')
+plt.grid(True)
+plt.show()
