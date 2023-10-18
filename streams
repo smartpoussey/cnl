@@ -1,0 +1,32 @@
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class StreamExample {
+    public static void main(String[] args) {
+        // Create a list of numbers
+        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+        System.out.println("Original List: " + numbers);
+
+        // Filter even numbers using streams
+        List<Integer> evenNumbers = numbers.stream()
+                .filter(n -> n % 2 == 0)
+                .collect(Collectors.toList());
+
+        System.out.println("Even Numbers: " + evenNumbers);
+
+        // Square each even number
+        List<Integer> squaredNumbers = evenNumbers.stream()
+                .map(n -> n * n)
+                .collect(Collectors.toList());
+
+        System.out.println("Squared Numbers: " + squaredNumbers);
+
+        // Find the sum of squared numbers
+        int sumOfSquaredNumbers = squaredNumbers.stream()
+                .reduce(0, (a, b) -> a + b);
+
+        System.out.println("Sum of Squared Numbers: " + sumOfSquaredNumbers);
+    }
+}
