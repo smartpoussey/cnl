@@ -1,71 +1,25 @@
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
-class FileOperations {
-    // Method to write data to a file
-    public static void writeToFile(String fileName, List<String> data) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
-            for (String line : data) {
-                writer.write(line);
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            System.err.println("Error writing to the file: " + e.getMessage());
-        }
-    }
+public class FileReadWriteExample {
+    public static void main(String[] args) {
+        String inputFile = "input.txt"; // Name of the file to read from
+        String outputFile = "output.txt"; // Name of the file to write to
 
-    // Method to read data from a file
-    public static List<String> readFromFile(String fileName) {
-        List<String> data = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(fileName)) ) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile);
+             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                data.add(line);
+                // Read a line from the input file and write it to the output file
+                writer.write(line);
+                writer.newLine(); // Add a newline to separate lines
             }
+            System.out.println("File copied successfully.");
         } catch (IOException e) {
-            System.err.println("Error reading from the file: " + e.getMessage());
+            System.err.println("An error occurred: " + e.getMessage());
         }
-        return data;
-    }
-}
-
-public class MultiThreadFileExample {
-    public static void main(String[] args) {
-        // Create a list of data to write to a file
-        List<String> dataToWrite = new ArrayList<>();
-        dataToWrite.add("Line 1");
-        dataToWrite.add("Line 2");
-        dataToWrite.add("Line 3");
-
-        // File to read from and write to
-        String fileName = "data.txt";
-
-        // Using a thread to write data to the file
-        Thread writeThread = new Thread(() -> {
-            FileOperations.writeToFile(fileName, dataToWrite);
-        });
-
-        // Using a thread to read data from the file
-        Thread readThread = new Thread(() -> {
-            List<String> dataRead = FileOperations.readFromFile(fileName);
-            System.out.println("Data read from the file:");
-            for (String line : dataRead) {
-                System.out.println(line);
-            }
-        });
-
-        // Start the write and read threads
-        writeThread.start();
-        readThread.start();
-
-        try {
-            writeThread.join();
-            readThread.join();
-        } catch (InterruptedException e) {
-            System.err.println("Thread interrupted: " + e.getMessage());
-        }
-
-        System.out.println("Program finished.");
     }
 }
